@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-kit/kit/log"
 	"github.com/pkg/errors"
@@ -13,6 +14,8 @@ import (
 	"github.com/fluxcd/flux/pkg/image"
 	"github.com/fluxcd/flux/pkg/registry"
 	"github.com/fluxcd/flux/pkg/resource"
+        kresource "github.com/fluxcd/flux/pkg/cluster/kubernetes/resource"
+        "github.com/fluxcd/flux/pkg/policy"
 )
 
 func mergeCredentials(log func(...interface{}) error,
@@ -145,8 +148,21 @@ func (c *Cluster) ImagesToFetch() registry.ImageCreds {
 
 			imageCreds := make(registry.ImageCreds)
 			for _, workload := range workloads {
-				logger := log.With(c.logger, "resource", resource.MakeID(workload.GetNamespace(), kind, workload.GetName()))
-				mergeCredentials(logger.Log, c.imageIncluder.IsIncluded, c.client, workload.GetNamespace(), workload.podTemplate, imageCreds, imagePullSecretCache)
+			        var policies policy.Set
+			        for k, v := range workload.GetAnnotations() {
+			                if strings.HasPrefix(k, kresource.PolicyPrefix) {
+			                        p := strings.TrimPrefix(k, kresource.PolicyPrefix)
+			                        if v == "true" {
+			                                policies = policies.Add(policy.Policy(p))
+			                        } else {
+			                                policies = policies.Set(policy.Policy(p), v)
+			                        }
+			                }
+			        }
+		                if policies.Has(policy.Automated) && !policies.Has(policy.Locked) && !policies.Has(policy.Ignore) {
+					logger := log.With(c.logger, "resource", resource.MakeID(workload.GetNamespace(), kind, workload.GetName()))
+					mergeCredentials(logger.Log, c.imageIncluder.IsIncluded, c.client, workload.GetNamespace(), workload.podTemplate, imageCreds, imagePullSecretCache)
+		                }
 			}
 
 			// Merge creds
