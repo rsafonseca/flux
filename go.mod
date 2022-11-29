@@ -4,7 +4,7 @@ go 1.16
 
 // transitive requirement from Helm Operator
 replace (
-	github.com/docker/distribution => github.com/docker/distribution v2.8.1+incompatible
+	github.com/docker/distribution => github.com/rsafonseca/distribution v0.0.0-20221111012502-334356f43da4
 	github.com/docker/docker => github.com/docker/docker v0.7.3-0.20190327010347-be7ac8be2ae0
 	github.com/fluxcd/helm-operator => github.com/fluxcd/helm-operator v1.4.0
 	github.com/fluxcd/helm-operator/pkg/install => github.com/fluxcd/helm-operator/pkg/install v0.0.0-20200213151218-f7e487142b46
